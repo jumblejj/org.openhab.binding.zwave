@@ -1365,6 +1365,8 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
             }
 
             // Process the channels to see if we're interested
+            ZWaveThingChannel altChannel = null;
+            boolean channelFound = false;
             for (ZWaveThingChannel channel : thingChannelsState) {
                 logger.trace("NODE {}: Checking channel={}, cmdClass={}, endpoint={}", nodeId, channel.getUID(),
                         channel.getCommandClass(), channel.getEndpoint());
@@ -1374,14 +1376,19 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                     continue;
                 }
                 
-                // Is it for the correct endpoint?
+                // No endpoint was recived in the event and this channel is for endpoint 1
+                // Save the channel for processing as an alternative no other channel is found
                 if (event.getEndpoint() == 0 && channel.getEndpoint() == 1)
                 {
-                    logger.debug("NODE {}: No endPoint information recieved, processing command {} for endpoint {} channel {}", nodeId, channel.getCommandClass(), channel.getEndpoint(), channel.getUID());
+                    altChannel = channel;
                 }
-                else if (channel.getEndpoint() != event.getEndpoint()) {
+
+                // Is it for the correct endpoint?
+                if (channel.getEndpoint() != event.getEndpoint()) {
                     continue;
                 }
+
+                channelFound = true;
 
                 if (channel.getConverter() == null) {
                     logger.warn("NODE {}: No state converter set for channel {}", nodeId, channel.getUID());
@@ -1399,6 +1406,24 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 }
             }
 
+            // No channel was found an processed, process the alternate channel that was found
+            if (!channelFound && altChannel != null) {
+                logger.debug("NODE {}: No endPoint information recieved and no matching channel for endPoint 0", nodeId);
+
+                if (altChannel.getConverter() == null) {
+                    logger.warn("NODE {}: No state converter set for channel {}", nodeId, altChannel.getUID());
+                    return;
+                }
+
+                State state = altChannel.getConverter().handleEvent(altChannel, event);
+                if (state != null) {
+                    logger.debug("NODE {}: Updating channel state {} to {} [{}]", nodeId, altChannel.getUID(), state,
+                            state.getClass().getSimpleName());
+
+                    updateState(altChannel.getUID(), state);
+                }
+            }
+            
             return;
         }
 
