@@ -1366,7 +1366,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
 
             // Process the channels to see if we're interested
             ZWaveThingChannel altChannel = null;
-            boolean channelFound = false;
+            boolean channelProcessed = false;
             for (ZWaveThingChannel channel : thingChannelsState) {
                 logger.trace("NODE {}: Checking channel={}, cmdClass={}, endpoint={}", nodeId, channel.getUID(),
                         channel.getCommandClass(), channel.getEndpoint());
@@ -1376,8 +1376,8 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                     continue;
                 }
                 
-                // No endpoint was recived in the event and this channel is for endpoint 1
-                // Save the channel for processing as an alternative no other channel is found
+                // If event was for endPoint 0 and this channel is for endpoint 1
+                // Save the channel for processing as an alternative if no other channel is found
                 if (event.getEndpoint() == 0 && channel.getEndpoint() == 1)
                 {
                     altChannel = channel;
@@ -1387,8 +1387,6 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 if (channel.getEndpoint() != event.getEndpoint()) {
                     continue;
                 }
-
-                channelFound = true;
 
                 if (channel.getConverter() == null) {
                     logger.warn("NODE {}: No state converter set for channel {}", nodeId, channel.getUID());
@@ -1403,11 +1401,12 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                             state.getClass().getSimpleName());
 
                     updateState(channel.getUID(), state);
+                    channelProcessed = true;
                 }
             }
 
-            // No channel was found an processed, process the alternate channel that was found
-            if (!channelFound && altChannel != null) {
+            // If no channel was processed, process the available alternate channel
+            if (!channelProcessed && altChannel != null) {
                 logger.debug("NODE {}: No matching channel for endPoint 0, using alternate channel for endPoint 1", nodeId);
 
                 if (altChannel.getConverter() == null) {
