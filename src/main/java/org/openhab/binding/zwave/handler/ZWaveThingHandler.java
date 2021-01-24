@@ -1408,7 +1408,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
 
             // No channel was found an processed, process the alternate channel that was found
             if (!channelFound && altChannel != null) {
-                logger.debug("NODE {}: No endPoint information recieved and no matching channel for endPoint 0", nodeId);
+                logger.debug("NODE {}: No matching channel for endPoint 0, using alternate channel for endPoint 1", nodeId);
 
                 if (altChannel.getConverter() == null) {
                     logger.warn("NODE {}: No state converter set for channel {}", nodeId, altChannel.getUID());
