@@ -1369,17 +1369,12 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 logger.trace("NODE {}: Checking channel={}, cmdClass={}, endpoint={}", nodeId, channel.getUID(),
                         channel.getCommandClass(), channel.getEndpoint());
 
-                // Is this command class associated with this channel?
-                if (!channel.getCommandClass().equals(commandClass)) {
+                if (channel.getEndpoint() != event.getEndpoint()) {
                     continue;
                 }
-                
-                // Is it for the correct endpoint?
-                if (event.getEndpoint() == 0 && channel.getEndpoint() == 1)
-                {
-                    logger.debug("NODE {}: No endPoint information recieved, processing command {} for endpoint {} channel {}", nodeId, channel.getCommandClass(), channel.getEndpoint(), channel.getUID());
-                }
-                else if (channel.getEndpoint() != event.getEndpoint()) {
+
+                // Is this command class associated with this channel?
+                if (!channel.getCommandClass().equals(commandClass)) {
                     continue;
                 }
 
